@@ -385,7 +385,7 @@ async def get_transaction_details(transaction_id: str = "") -> str:
 **Type:** {txn.type}
 **Date:** {txn.date}
 **Description:** {txn.description}
-**Amount:** {txn.amount} {txn.currency_code}
+**Amount:** {format_amount(txn.amount)} {txn.currency_code}
 
 **Source:** {txn.source_name} (ID: {txn.source_id})
 **Destination:** {txn.destination_name} (ID: {txn.destination_id})
@@ -447,7 +447,7 @@ async def create_withdrawal(description: str = "", amount: str = "", source_acco
         result = api.store_transaction(transaction_store)
         txn_data = result.data.attributes.transactions[0]
 
-        return f"✅ Created withdrawal: {txn_data.description}\nAmount: {txn_data.amount} {txn_data.currency_code}\nID: {result.data.id}"
+        return f"✅ Created withdrawal: {txn_data.description}\nAmount: {format_amount(txn_data.amount)} {txn_data.currency_code}\nID: {result.data.id}"
     except Exception as e:
         return format_error(e)
 
@@ -498,7 +498,7 @@ async def create_deposit(description: str = "", amount: str = "", destination_ac
         result = api.store_transaction(transaction_store)
         txn_data = result.data.attributes.transactions[0]
 
-        return f"✅ Created deposit: {txn_data.description}\nAmount: {txn_data.amount} {txn_data.currency_code}\nID: {result.data.id}"
+        return f"✅ Created deposit: {txn_data.description}\nAmount: {format_amount(txn_data.amount)} {txn_data.currency_code}\nID: {result.data.id}"
     except Exception as e:
         return format_error(e)
 
@@ -535,7 +535,7 @@ async def create_transfer(description: str = "", amount: str = "", source_accoun
         result = api.store_transaction(transaction_store)
         txn_data = result.data.attributes.transactions[0]
 
-        return f"✅ Created transfer: {txn_data.description}\nAmount: {txn_data.amount} {txn_data.currency_code}\nFrom: {txn_data.source_name} → To: {txn_data.destination_name}\nID: {result.data.id}"
+        return f"✅ Created transfer: {txn_data.description}\nAmount: {format_amount(txn_data.amount)} {txn_data.currency_code}\nFrom: {txn_data.source_name} → To: {txn_data.destination_name}\nID: {result.data.id}"
     except Exception as e:
         return format_error(e)
 
@@ -862,7 +862,7 @@ async def list_transactions_without_budget(start_date: str = "", end_date: str =
 
         for txn in no_budget[:50]:
             txn_data = txn.attributes.transactions[0]
-            result += f"| {txn.id} | {txn_data.var_date} | {txn_data.description} | {txn_data.amount} |\n"
+            result += f"| {txn.id} | {txn_data.var_date} | {txn_data.description} | {format_amount(txn_data.amount)} |\n"
 
         return result
     except Exception as e:
@@ -1391,8 +1391,8 @@ async def get_piggy_bank_details(piggy_bank_id: str = "") -> str:
 
 **ID:** {piggy_bank.data.id}
 **Account:** {attrs.account_name} (ID: {attrs.account_id})
-**Target Amount:** {attrs.target_amount} {attrs.currency_code}
-**Current Amount:** {attrs.current_amount} {attrs.currency_code}
+**Target Amount:** {format_amount(attrs.target_amount)} {attrs.currency_code}
+**Current Amount:** {format_amount(attrs.current_amount)} {attrs.currency_code}
 **Remaining:** {remaining:.2f} {attrs.currency_code}
 **Progress:** {progress:.1f}%
 
@@ -2236,7 +2236,7 @@ async def test_rule(rule_id: str = "", start_date: str = "", end_date: str = "")
 
         for txn in transactions.data[:50]:
             attrs = txn.attributes.transactions[0]
-            result += f"| {txn.id} | {attrs.var_date} | {attrs.description} | {attrs.amount} {attrs.currency_code} |\n"
+            result += f"| {txn.id} | {attrs.var_date} | {attrs.description} | {format_amount(attrs.amount)} {attrs.currency_code} |\n"
 
         return result
     except Exception as e:
@@ -2323,7 +2323,7 @@ async def get_recurrence_details(recurrence_id: str = "") -> str:
             txn_info = f"""
 **Transaction Type:** {txn['type']}
 **Description:** {txn['description']}
-**Amount:** {txn['amount']} {txn['currency_code']}
+**Amount:** {format_amount(txn['amount'])} {txn['currency_code']}
 **Source:** {txn.get('source_name', 'N/A')}
 **Destination:** {txn.get('destination_name', 'N/A')}
 **Category:** {txn.get('category_name', 'None')}
@@ -2486,7 +2486,7 @@ async def list_recurrence_transactions(recurrence_id: str = "") -> str:
 
         for txn in transactions.data[:50]:
             attrs = txn.attributes.transactions[0]
-            result += f"| {txn.id} | {attrs.var_date} | {attrs.description} | {attrs.amount} {attrs.currency_code} |\n"
+            result += f"| {txn.id} | {attrs.var_date} | {attrs.description} | {format_amount(attrs.amount)} {attrs.currency_code} |\n"
 
         return result
     except Exception as e:
@@ -2812,7 +2812,7 @@ async def create_available_budget(currency_code: str = "USD", amount: str = "", 
         available_budget_store = firefly_iii_client.AvailableBudgetStore(**available_budget_data)
         available_budget = api.store_available_budget(available_budget_store)
 
-        return f"✅ Created available budget: {available_budget.data.attributes.amount} {available_budget.data.attributes.currency_code} (ID: {available_budget.data.id})"
+        return f"✅ Created available budget: {format_amount(available_budget.data.attributes.amount)} {available_budget.data.attributes.currency_code} (ID: {available_budget.data.id})"
     except Exception as e:
         return format_error(e)
 
@@ -2833,7 +2833,7 @@ async def update_available_budget(available_budget_id: str = "", amount: str = "
         available_budget_update = firefly_iii_client.AvailableBudgetUpdate(**update_data)
         available_budget = api.update_available_budget(available_budget_id, available_budget_update)
 
-        return f"✅ Updated available budget to: {available_budget.data.attributes.amount} {available_budget.data.attributes.currency_code}"
+        return f"✅ Updated available budget to: {format_amount(available_budget.data.attributes.amount)} {available_budget.data.attributes.currency_code}"
     except Exception as e:
         return format_error(e)
 
