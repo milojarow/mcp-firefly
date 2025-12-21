@@ -78,6 +78,13 @@ def format_error(e: Exception) -> str:
             return f"❌ API Error ({e.status}): {e.reason}"
     return f"❌ Error: {str(e)}"
 
+def format_amount(amount: str) -> str:
+    """Format amount to 2 decimal places."""
+    try:
+        return f"{float(amount):.2f}"
+    except (ValueError, TypeError):
+        return str(amount)
+
 # ============================================================================
 # SYSTEM & HEALTH
 # ============================================================================
@@ -315,7 +322,7 @@ async def list_account_transactions(account_id: str = "", start_date: str = "", 
 
         for txn in transactions.data[:50]:
             attrs = txn.attributes.transactions[0]
-            result += f"| {attrs.var_date} | {attrs.description} | {attrs.amount} {attrs.currency_code} | {attrs.type} |\n"
+            result += f"| {attrs.var_date} | {attrs.description} | {format_amount(attrs.amount)} {attrs.currency_code} | {attrs.type} |\n"
 
         return result
     except Exception as e:
@@ -354,7 +361,7 @@ async def list_transactions(start_date: str = "", end_date: str = "", transactio
 
         for txn in transactions.data:
             attrs = txn.attributes.transactions[0]
-            result += f"| {txn.id} | {attrs.var_date} | {attrs.description} | {attrs.amount} {attrs.currency_code} | {attrs.type} |\n"
+            result += f"| {txn.id} | {attrs.var_date} | {attrs.description} | {format_amount(attrs.amount)} {attrs.currency_code} | {attrs.type} |\n"
 
         return result
     except Exception as e:
@@ -413,9 +420,14 @@ async def create_withdrawal(description: str = "", amount: str = "", source_acco
             "date": transaction_date,
             "amount": amount,
             "description": description,
-            "source_id": source_account,
-            "destination_name": destination_account
+            "source_id": source_account
         }
+
+        # Use destination_id if numeric ID is passed, otherwise use destination_name
+        if destination_account.strip().isdigit():
+            transaction_split["destination_id"] = destination_account
+        else:
+            transaction_split["destination_name"] = destination_account
 
         if category:
             transaction_split["category_name"] = category
@@ -459,9 +471,14 @@ async def create_deposit(description: str = "", amount: str = "", destination_ac
             "date": transaction_date,
             "amount": amount,
             "description": description,
-            "source_name": source_account,
             "destination_id": destination_account
         }
+
+        # Use source_id if numeric ID is passed, otherwise use source_name
+        if source_account.strip().isdigit():
+            transaction_split["source_id"] = source_account
+        else:
+            transaction_split["source_name"] = source_account
 
         if category:
             transaction_split["category_name"] = category
@@ -752,7 +769,7 @@ async def list_budget_limits(budget_id: str = "") -> str:
 
         for limit in limits.data:
             attrs = limit.attributes
-            result += f"| {attrs.start} | {attrs.end} | {attrs.amount} | {attrs.currency_code} |\n"
+            result += f"| {attrs.start} | {attrs.end} | {format_amount(attrs.amount)} | {attrs.currency_code} |\n"
 
         return result
     except Exception as e:
@@ -989,7 +1006,7 @@ async def list_transactions_by_category(category_id: str = "", start_date: str =
 
         for txn in transactions.data[:50]:
             attrs = txn.attributes.transactions[0]
-            result += f"| {attrs.var_date} | {attrs.description} | {attrs.amount} {attrs.currency_code} |\n"
+            result += f"| {attrs.var_date} | {attrs.description} | {format_amount(attrs.amount)} {attrs.currency_code} |\n"
 
         return result
     except Exception as e:
@@ -1140,7 +1157,7 @@ async def list_transactions_by_tag(tag_id: str = "", start_date: str = "", end_d
 
         for txn in transactions.data[:50]:
             attrs = txn.attributes.transactions[0]
-            result += f"| {attrs.var_date} | {attrs.description} | {attrs.amount} {attrs.currency_code} |\n"
+            result += f"| {attrs.var_date} | {attrs.description} | {format_amount(attrs.amount)} {attrs.currency_code} |\n"
 
         return result
     except Exception as e:
@@ -1168,7 +1185,7 @@ async def list_bills() -> str:
         for bill in bills.data:
             attrs = bill.attributes
             active = '✓' if attrs.active else '✗'
-            result += f"| {bill.id} | {attrs.name} | {attrs.amount_min} | {attrs.amount_max} | {active} |\n"
+            result += f"| {bill.id} | {attrs.name} | {format_amount(attrs.amount_min)} | {format_amount(attrs.amount_max)} | {active} |\n"
 
         return result
     except Exception as e:
@@ -1190,7 +1207,7 @@ async def get_bill_details(bill_id: str = "") -> str:
 
 **ID:** {bill.data.id}
 **Active:** {'Yes' if attrs.active else 'No'}
-**Amount Range:** {attrs.amount_min} - {attrs.amount_max} {attrs.currency_code}
+**Amount Range:** {format_amount(attrs.amount_min)} - {format_amount(attrs.amount_max)} {attrs.currency_code}
 **Repeat Frequency:** {attrs.repeat_freq}
 **Skip:** {attrs.skip}
 
@@ -1316,7 +1333,7 @@ async def list_bill_transactions(bill_id: str = "", start_date: str = "", end_da
 
         for txn in transactions.data[:50]:
             attrs = txn.attributes.transactions[0]
-            result += f"| {attrs.var_date} | {attrs.description} | {attrs.amount} {attrs.currency_code} |\n"
+            result += f"| {attrs.var_date} | {attrs.description} | {format_amount(attrs.amount)} {attrs.currency_code} |\n"
 
         return result
     except Exception as e:
@@ -1487,7 +1504,7 @@ async def list_piggy_bank_events(piggy_bank_id: str = "") -> str:
 
         for event in events.data:
             attrs = event.attributes
-            result += f"| {attrs.created_at} | {attrs.amount} {attrs.currency_code} | {attrs.transaction_journal_id or 'N/A'} |\n"
+            result += f"| {attrs.created_at} | {format_amount(attrs.amount)} {attrs.currency_code} | {attrs.transaction_journal_id or 'N/A'} |\n"
 
         return result
     except Exception as e:
@@ -2746,7 +2763,7 @@ async def list_available_budgets() -> str:
 
         for ab in available_budgets.data:
             attrs = ab.attributes
-            result += f"| {ab.id} | {attrs.currency_code} | {attrs.amount} | {attrs.start} | {attrs.end} |\n"
+            result += f"| {ab.id} | {attrs.currency_code} | {format_amount(attrs.amount)} | {attrs.start} | {attrs.end} |\n"
 
         return result
     except Exception as e:
@@ -2768,7 +2785,7 @@ async def get_available_budget_details(available_budget_id: str = "") -> str:
 
 **ID:** {available_budget.data.id}
 **Currency:** {attrs.currency_code}
-**Amount:** {attrs.amount}
+**Amount:** {format_amount(attrs.amount)}
 **Period:** {attrs.start} to {attrs.end}
 """
         return result
