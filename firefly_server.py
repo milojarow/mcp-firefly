@@ -3434,13 +3434,13 @@ def update_budget_limit(budget_id: str = "", budget_limit_id: str = "", start_da
         return format_error(e)
 
 @mcp.tool()
-def delete_budget_limit(budget_limit_id: str = "", confirm: str = "") -> str:
+def delete_budget_limit(budget_id: str = "", budget_limit_id: str = "", confirm: str = "") -> str:
     """Delete a budget limit (requires confirm='yes')."""
     if confirm.lower() != "yes":
         return "⚠️  Deletion requires confirm='yes'"
     try:
         api = firefly_iii_client.api.BudgetsApi(get_api_client())
-        api.delete_budget_limit(budget_limit_id)
+        api.delete_budget_limit(str(budget_id), str(budget_limit_id))
         return f"✅ Budget limit {budget_limit_id} deleted"
     except Exception as e:
         return format_error(e)
