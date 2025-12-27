@@ -1429,29 +1429,41 @@ async def create_piggy_bank(name: str = "", account_id: str = "", target_amount:
         api = firefly_iii_client.PiggyBanksApi(client)
 
         # Create PiggyBankAccountStore object
+        logger.info(f"Creating account store with id={account_id}, current_amount={current_amount}")
         account_store = firefly_iii_client.PiggyBankAccountStore(
             id=account_id,
             current_amount=current_amount if current_amount and current_amount != "0" else None
         )
+        logger.info(f"Account store created: {account_store}")
 
-        piggy_bank_data = {
-            "name": name,
-            "accounts": [account_store],
-            "target_amount": target_amount,
-            "start_date": datetime.fromisoformat(start_date).date() if start_date else None
-        }
+        # Initialize PiggyBankStore with direct parameters
+        start_date_val = datetime.fromisoformat(start_date).date() if start_date else datetime.now().date()
+        target_date_val = datetime.fromisoformat(target_date).date() if target_date else None
+        logger.info(f"Creating piggy bank store: name={name}, target_amount={target_amount}, start_date={start_date_val}, target_date={target_date_val}")
 
-        if target_date:
-            piggy_bank_data["target_date"] = datetime.fromisoformat(target_date).date()
-        if notes:
-            piggy_bank_data["notes"] = notes
-
-        piggy_bank_store = firefly_iii_client.PiggyBankStore(**piggy_bank_data)
+        piggy_bank_store = firefly_iii_client.PiggyBankStore(
+            name=name,
+            accounts=[account_store],
+            target_amount=target_amount,
+            start_date=start_date_val,
+            target_date=target_date_val,
+            notes=notes if notes else None
+        )
+        logger.info(f"Piggy bank store created successfully")
+        logger.info(f"Calling API to store piggy bank...")
         piggy_bank = api.store_piggy_bank(piggy_bank_store)
+        logger.info(f"API call succeeded")
 
         return f"✅ Created piggy bank: {piggy_bank.data.attributes.name} (ID: {piggy_bank.data.id})"
+    except ApiException as e:
+        # For debugging: show full error details
+        try:
+            error_data = json.loads(e.body)
+            return f"❌ API Error ({e.status}): {json.dumps(error_data, indent=2)}"
+        except:
+            return f"❌ API Error ({e.status}): {e.reason} - Body: {e.body}"
     except Exception as e:
-        return format_error(e)
+        return f"❌ Error: {str(e)}"
 
 @mcp.tool()
 async def update_piggy_bank(piggy_bank_id: str = "", name: str = "", target_amount: str = "", current_amount: str = "", notes: str = "") -> str:
