@@ -432,7 +432,11 @@ async def create_withdrawal(description: str = "", amount: str = "", source_acco
         if category:
             transaction_split["category_name"] = category
         if budget:
-            transaction_split["budget_name"] = budget
+            # Route to budget_id for numeric input, budget_name for text
+            if budget.strip().isdigit():
+                transaction_split["budget_id"] = budget
+            else:
+                transaction_split["budget_name"] = budget
         if tags:
             transaction_split["tags"] = [t.strip() for t in tags.split(",")]
         if notes:
@@ -441,7 +445,7 @@ async def create_withdrawal(description: str = "", amount: str = "", source_acco
         transaction_store = firefly_iii_client.TransactionStore(
             error_if_duplicate_hash=False,
             apply_rules=True,
-            transactions=[transaction_split]
+            transactions=[firefly_iii_client.TransactionSplitStore(**transaction_split)]
         )
 
         result = api.store_transaction(transaction_store)
@@ -483,7 +487,11 @@ async def create_deposit(description: str = "", amount: str = "", destination_ac
         if category:
             transaction_split["category_name"] = category
         if budget:
-            transaction_split["budget_name"] = budget
+            # Route to budget_id for numeric input, budget_name for text
+            if budget.strip().isdigit():
+                transaction_split["budget_id"] = budget
+            else:
+                transaction_split["budget_name"] = budget
         if tags:
             transaction_split["tags"] = [t.strip() for t in tags.split(",")]
         if notes:
@@ -492,7 +500,7 @@ async def create_deposit(description: str = "", amount: str = "", destination_ac
         transaction_store = firefly_iii_client.TransactionStore(
             error_if_duplicate_hash=False,
             apply_rules=True,
-            transactions=[transaction_split]
+            transactions=[firefly_iii_client.TransactionSplitStore(**transaction_split)]
         )
 
         result = api.store_transaction(transaction_store)
@@ -529,7 +537,7 @@ async def create_transfer(description: str = "", amount: str = "", source_accoun
         transaction_store = firefly_iii_client.TransactionStore(
             error_if_duplicate_hash=False,
             apply_rules=True,
-            transactions=[transaction_split]
+            transactions=[firefly_iii_client.TransactionSplitStore(**transaction_split)]
         )
 
         result = api.store_transaction(transaction_store)
@@ -541,7 +549,11 @@ async def create_transfer(description: str = "", amount: str = "", source_accoun
 
 @mcp.tool()
 async def update_transaction(transaction_id: str = "", description: str = "", amount: str = "", date: str = "", category: str = "", budget: str = "", tags: str = "", notes: str = "") -> str:
-    """Update an existing transaction with new values for description, amount, date, category, budget, tags, or notes."""
+    """Update an existing transaction with new values for description, amount, date, category, budget, tags, or notes.
+
+    NOTE: budget parameter must be a budget ID (numeric), not a budget name.
+    Example: budget="2" (not "Transport - Commute")
+    """
     try:
         if not transaction_id.strip():
             return "❌ Error: transaction_id is required"
@@ -553,27 +565,28 @@ async def update_transaction(transaction_id: str = "", description: str = "", am
         existing = api.get_transaction(transaction_id)
         existing_txn = existing.data.attributes.transactions[0]
 
-        # Build update data
-        update_split = {
-            "type": existing_txn.type,
-            "date": date if date else existing_txn.date,
-            "amount": amount if amount else existing_txn.amount,
-            "description": description if description else existing_txn.description,
-            "source_id": existing_txn.source_id,
-            "destination_id": existing_txn.destination_id
-        }
+        # Build update data (only include fields that are being updated)
+        update_split = {}
+
+        if date:
+            update_split["date"] = date
+        if amount:
+            update_split["amount"] = amount
+        if description:
+            update_split["description"] = description
 
         if category:
             update_split["category_name"] = category
         if budget:
-            update_split["budget_name"] = budget
+            # For updates, ONLY budget_id works (budget_name is excluded during serialization)
+            update_split["budget_id"] = budget
         if tags:
             update_split["tags"] = [t.strip() for t in tags.split(",")]
         if notes:
             update_split["notes"] = notes
 
         transaction_update = firefly_iii_client.TransactionUpdate(
-            transactions=[update_split]
+            transactions=[firefly_iii_client.TransactionSplitUpdate(**update_split)]
         )
 
         result = api.update_transaction(transaction_id, transaction_update)
@@ -2391,7 +2404,11 @@ async def create_recurrence(title: str = "", first_date: str = "", repeat_freq: 
         if category:
             transaction_data["category_name"] = category
         if budget:
-            transaction_data["budget_name"] = budget
+            # Route to budget_id for numeric input, budget_name for text
+            if budget.strip().isdigit():
+                transaction_data["budget_id"] = budget
+            else:
+                transaction_data["budget_name"] = budget
 
         # Build repetition data
         repetition_data = {
@@ -2406,7 +2423,7 @@ async def create_recurrence(title: str = "", first_date: str = "", repeat_freq: 
             "repeat_freq": repeat_freq,
             "type": "recurrence",
             "repetitions": [repetition_data],
-            "transactions": [transaction_data],
+            "transactions": [firefly_iii_client.RecurrenceTransactionStore(**transaction_data)],
             "apply_rules": True,
             "active": True
         }
