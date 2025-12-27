@@ -1428,18 +1428,21 @@ async def create_piggy_bank(name: str = "", account_id: str = "", target_amount:
         client = get_api_client()
         api = firefly_iii_client.PiggyBanksApi(client)
 
+        # Create PiggyBankAccountStore object
+        account_store = firefly_iii_client.PiggyBankAccountStore(
+            id=account_id,
+            current_amount=current_amount if current_amount and current_amount != "0" else None
+        )
+
         piggy_bank_data = {
             "name": name,
-            "account_id": account_id,
-            "target_amount": target_amount
+            "accounts": [account_store],
+            "target_amount": target_amount,
+            "start_date": datetime.fromisoformat(start_date).date() if start_date else None
         }
 
-        if current_amount and current_amount != "0":
-            piggy_bank_data["current_amount"] = current_amount
-        if start_date:
-            piggy_bank_data["start_date"] = start_date
         if target_date:
-            piggy_bank_data["target_date"] = target_date
+            piggy_bank_data["target_date"] = datetime.fromisoformat(target_date).date()
         if notes:
             piggy_bank_data["notes"] = notes
 
