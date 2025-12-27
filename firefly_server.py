@@ -3413,7 +3413,7 @@ def create_budget_limit(budget_id: str = "", start_date: str = "", end_date: str
             end=datetime.fromisoformat(end_date).date() if end_date else None,
             amount=amount
         )
-        response = api.store_budget_limit(limit)
+        response = api.store_budget_limit(budget_id, limit)
         return f"✅ Budget limit created for budget {budget_id} (ID: {response.data.id})"
     except Exception as e:
         return format_error(e)
