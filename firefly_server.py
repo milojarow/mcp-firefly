@@ -3407,7 +3407,7 @@ def create_budget_limit(budget_id: str = "", start_date: str = "", end_date: str
     """Create a new budget limit for a budget."""
     try:
         api = firefly_iii_client.api.BudgetsApi(get_api_client())
-        limit = firefly_iii_client.BudgetLimit(
+        limit = firefly_iii_client.BudgetLimitStore(
             budget_id=budget_id,
             start=datetime.fromisoformat(start_date).date() if start_date else None,
             end=datetime.fromisoformat(end_date).date() if end_date else None,
@@ -3423,7 +3423,7 @@ def update_budget_limit(budget_limit_id: str = "", start_date: str = "", end_dat
     """Update an existing budget limit."""
     try:
         api = firefly_iii_client.api.BudgetsApi(get_api_client())
-        limit = firefly_iii_client.BudgetLimit()
+        limit = firefly_iii_client.BudgetLimitUpdate()
         if start_date:
             limit.start = datetime.fromisoformat(start_date).date()
         if end_date:
