@@ -3423,13 +3423,11 @@ def update_budget_limit(budget_id: str = "", budget_limit_id: str = "", start_da
     """Update an existing budget limit."""
     try:
         api = firefly_iii_client.api.BudgetsApi(get_api_client())
-        limit = firefly_iii_client.BudgetLimitUpdate()
-        if start_date:
-            limit.start = datetime.fromisoformat(start_date).date()
-        if end_date:
-            limit.end = datetime.fromisoformat(end_date).date()
-        if amount:
-            limit.amount = amount
+        limit = firefly_iii_client.BudgetLimitUpdate(
+            start=datetime.fromisoformat(start_date).date() if start_date else None,
+            end=datetime.fromisoformat(end_date).date() if end_date else None,
+            amount=amount if amount else None
+        )
         response = api.update_budget_limit(budget_id, budget_limit_id, limit)
         return f"✅ Budget limit {budget_limit_id} updated"
     except Exception as e:
