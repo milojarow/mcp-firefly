@@ -3428,7 +3428,7 @@ def update_budget_limit(budget_id: str = "", budget_limit_id: str = "", start_da
             end=datetime.fromisoformat(end_date).date() if end_date else None,
             amount=amount if amount else None
         )
-        response = api.update_budget_limit(id=budget_id, limit_id=budget_limit_id, budget_limit_update=limit)
+        response = api.update_budget_limit(str(budget_id), str(budget_limit_id), limit)
         return f"✅ Budget limit {budget_limit_id} updated"
     except Exception as e:
         return format_error(e)
