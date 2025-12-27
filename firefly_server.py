@@ -3419,7 +3419,7 @@ def create_budget_limit(budget_id: str = "", start_date: str = "", end_date: str
         return format_error(e)
 
 @mcp.tool()
-def update_budget_limit(budget_limit_id: str = "", start_date: str = "", end_date: str = "", amount: str = "") -> str:
+def update_budget_limit(budget_id: str = "", budget_limit_id: str = "", start_date: str = "", end_date: str = "", amount: str = "") -> str:
     """Update an existing budget limit."""
     try:
         api = firefly_iii_client.api.BudgetsApi(get_api_client())
@@ -3430,7 +3430,7 @@ def update_budget_limit(budget_limit_id: str = "", start_date: str = "", end_dat
             limit.end = datetime.fromisoformat(end_date).date()
         if amount:
             limit.amount = amount
-        response = api.update_budget_limit(budget_limit_id, limit)
+        response = api.update_budget_limit(budget_id, budget_limit_id, limit)
         return f"✅ Budget limit {budget_limit_id} updated"
     except Exception as e:
         return format_error(e)
