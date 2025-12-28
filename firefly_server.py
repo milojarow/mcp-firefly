@@ -1464,6 +1464,13 @@ async def create_piggy_bank(name: str = "", account_id: str = "", target_amount:
         # Also ensure account_id is properly set in the accounts array
         if 'accounts' in piggy_bank_dict and len(piggy_bank_dict['accounts']) > 0:
             piggy_bank_dict['accounts'][0]['account_id'] = account_id
+
+        # Convert date objects to ISO format strings for JSON serialization
+        if 'start_date' in piggy_bank_dict and piggy_bank_dict['start_date']:
+            piggy_bank_dict['start_date'] = piggy_bank_dict['start_date'].isoformat()
+        if 'target_date' in piggy_bank_dict and piggy_bank_dict['target_date']:
+            piggy_bank_dict['target_date'] = piggy_bank_dict['target_date'].isoformat()
+
         logger.info(f"Modified piggy bank dict: {piggy_bank_dict}")
 
         # Reconstruct PiggyBankStore from modified dict
