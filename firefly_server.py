@@ -1428,6 +1428,12 @@ async def create_piggy_bank(name: str = "", account_id: str = "", target_amount:
         client = get_api_client()
         api = firefly_iii_client.PiggyBanksApi(client)
 
+        # Get account details to retrieve currency
+        accounts_api = firefly_iii_client.AccountsApi(client)
+        account_response = accounts_api.get_account(account_id)
+        currency_code = account_response.data.attributes.currency_code
+        logger.info(f"Retrieved account currency: {currency_code}")
+
         # Create PiggyBankAccountStore object
         logger.info(f"Creating account store with id={account_id}, current_amount={current_amount}")
         account_store = firefly_iii_client.PiggyBankAccountStore(
@@ -1441,6 +1447,7 @@ async def create_piggy_bank(name: str = "", account_id: str = "", target_amount:
         target_date_val = datetime.fromisoformat(target_date).date() if target_date else None
         logger.info(f"Creating piggy bank store: name={name}, target_amount={target_amount}, start_date={start_date_val}, target_date={target_date_val}")
 
+        # Create piggy bank store and manually add currency code via dict manipulation
         piggy_bank_store = firefly_iii_client.PiggyBankStore(
             name=name,
             accounts=[account_store],
@@ -1449,12 +1456,42 @@ async def create_piggy_bank(name: str = "", account_id: str = "", target_amount:
             target_date=target_date_val,
             notes=notes if notes else None
         )
-        logger.info(f"Piggy bank store created successfully")
+
+        # Manually add transaction_currency_code to the dict before sending
+        piggy_bank_dict = piggy_bank_store.to_dict()
+        piggy_bank_dict['transaction_currency_code'] = currency_code
+        # Also ensure account_id is properly set in the accounts array
+        if 'accounts' in piggy_bank_dict and len(piggy_bank_dict['accounts']) > 0:
+            piggy_bank_dict['accounts'][0]['account_id'] = account_id
+        logger.info(f"Modified piggy bank dict: {piggy_bank_dict}")
+
+        # Reconstruct PiggyBankStore from modified dict
+        # Since the model doesn't support transaction_currency_code, we'll use the HTTP API directly
         logger.info(f"Calling API to store piggy bank...")
-        piggy_bank = api.store_piggy_bank(piggy_bank_store)
+
+        # Make raw HTTP POST request with the modified dict
+        import requests
+        api_url = client.configuration.host + "/api/v1/piggy-banks"
+        headers = {
+            "Authorization": f"Bearer {client.configuration.access_token}",
+            "Accept": "application/json",
+            "Content-Type": "application/json"
+        }
+        response = requests.post(api_url, json=piggy_bank_dict, headers=headers)
+        response.raise_for_status()
+        result = response.json()
         logger.info(f"API call succeeded")
 
-        return f"✅ Created piggy bank: {piggy_bank.data.attributes.name} (ID: {piggy_bank.data.id})"
+        piggy_bank_id = result['data']['id']
+        piggy_bank_name = result['data']['attributes']['name']
+        return f"✅ Created piggy bank: {piggy_bank_name} (ID: {piggy_bank_id})"
+    except requests.exceptions.HTTPError as e:
+        # HTTP error from requests library
+        try:
+            error_data = e.response.json()
+            return f"❌ API Error ({e.response.status_code}): {json.dumps(error_data, indent=2)}"
+        except:
+            return f"❌ API Error ({e.response.status_code}): {e.response.text}"
     except ApiException as e:
         # For debugging: show full error details
         try:
