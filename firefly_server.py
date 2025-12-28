@@ -7,6 +7,7 @@ import os
 import sys
 import json
 import logging
+import requests
 from datetime import datetime, timezone
 from typing import Any
 import firefly_iii_client
@@ -1470,7 +1471,6 @@ async def create_piggy_bank(name: str = "", account_id: str = "", target_amount:
         logger.info(f"Calling API to store piggy bank...")
 
         # Make raw HTTP POST request with the modified dict
-        import requests
         api_url = client.configuration.host + "/api/v1/piggy-banks"
         headers = {
             "Authorization": f"Bearer {client.configuration.access_token}",
