@@ -3439,11 +3439,11 @@ def update_budget_limit(budget_id: str = "", budget_limit_id: str = "", start_da
     try:
         api = firefly_iii_client.api.BudgetsApi(get_api_client())
         limit = firefly_iii_client.BudgetLimitUpdate(
-            start=datetime.fromisoformat(start_date).date() if start_date else None,
-            end=datetime.fromisoformat(end_date).date() if end_date else None,
+            start=datetime.fromisoformat(start_date) if start_date else None,
+            end=datetime.fromisoformat(end_date) if end_date else None,
             amount=amount if amount else None
         )
-        response = api.update_budget_limit(id=budget_id, limit_id=budget_limit_id, budget_limit_update=limit)
+        response = api.update_budget_limit(budget_id, budget_limit_id, limit)
         return f"✅ Budget limit {budget_limit_id} updated"
     except Exception as e:
         return format_error(e)
@@ -3455,7 +3455,7 @@ def delete_budget_limit(budget_id: str = "", budget_limit_id: str = "", confirm:
         return "⚠️  Deletion requires confirm='yes'"
     try:
         api = firefly_iii_client.api.BudgetsApi(get_api_client())
-        api.delete_budget_limit(id=budget_id, limit_id=budget_limit_id)
+        api.delete_budget_limit(budget_id, budget_limit_id)
         return f"✅ Budget limit {budget_limit_id} deleted"
     except Exception as e:
         return format_error(e)
