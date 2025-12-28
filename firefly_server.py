@@ -1478,7 +1478,7 @@ async def create_piggy_bank(name: str = "", account_id: str = "", target_amount:
         logger.info(f"Calling API to store piggy bank...")
 
         # Make raw HTTP POST request with the modified dict
-        api_url = client.configuration.host + "/api/v1/piggy-banks"
+        api_url = client.configuration.host + "/v1/piggy-banks"
         headers = {
             "Authorization": f"Bearer {client.configuration.access_token}",
             "Accept": "application/json",
